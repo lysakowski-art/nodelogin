@@ -6,7 +6,7 @@ const cors = require("cors");
 const sessionStore = require("./components/sessionStore.js");
 const connections = require("./components/connections");
 
-const TWO_HOURS = 1000 * 60 * 60 * 2;
+const TWO_HOURS = 1000 * 60 * 15;
 
 const {
   PORT = 8000,
@@ -53,7 +53,11 @@ app.post("/auth", (req, res) => {
       [login, password],
       (error, results, fields) => {
         if (results.length > 0) {
-          req.session.loggedIn = true;
+          req.session.loggedIn = {
+            loggedIn: true,
+            username: login,
+            typeOfUser: results[0].type,
+          };
           res.send(true);
         } else {
           res.send(false);
@@ -65,9 +69,22 @@ app.post("/auth", (req, res) => {
   }
 });
 
+app.post("/register", (req, res) => {
+  const { username, password, email, type } = req.body;
+  if (username && password && email && type) {
+    connections.connection.query(
+      "INSERT INTO `accounts`(username, password, email, type) VALUES (?,?,?,?)",
+      [username, password, email, type]
+    );
+    res.send(true);
+  } else {
+    res.send(false);
+  }
+});
+
 app.get("/cookie", (req, res) => {
   if (req.session.loggedIn) {
-    res.send(true);
+    res.send(req.session.loggedIn);
   }
 });
 
