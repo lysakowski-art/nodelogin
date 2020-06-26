@@ -5,6 +5,8 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const sessionStore = require("./components/sessionStore.js");
 const connections = require("./components/connections");
+const bcrypt = require("bcrypt");
+const saltRounds = 10;
 
 const TWO_HOURS = 1000 * 60 * 15;
 
@@ -47,18 +49,24 @@ app.use(
 
 app.post("/auth", (req, res) => {
   const { login, password } = req.body;
+
   if (login && password) {
     connections.connection.query(
-      "SELECT * FROM accounts WHERE username = ? AND password = ?",
-      [login, password],
+      "SELECT * FROM accounts WHERE username = ?",
+      [login],
       (error, results, fields) => {
         if (results.length > 0) {
-          req.session.loggedIn = {
-            loggedIn: true,
-            username: login,
-            typeOfUser: results[0].type,
-          };
-          res.send(true);
+          console.log(results[0]);
+          if (bcrypt.compareSync(password, results[0].password)) {
+            req.session.loggedIn = {
+              loggedIn: true,
+              username: login,
+              typeOfUser: results[0].type,
+            };
+            res.send(true);
+          } else {
+            res.send(false);
+          }
         } else {
           res.send(false);
         }
@@ -71,12 +79,22 @@ app.post("/auth", (req, res) => {
 
 app.post("/register", (req, res) => {
   const { username, password, email, type } = req.body;
-  if (username && password && email && type) {
-    connections.connection.query(
-      "INSERT INTO `accounts`(username, password, email, type) VALUES (?,?,?,?)",
-      [username, password, email, type]
-    );
-    res.send(true);
+  let hash = bcrypt.hashSync(password, saltRounds);
+
+  if (
+    connections.connection.query("SELECT * FROM accounts WHERE username = ?", [
+      username,
+    ]) === 0
+  ) {
+    if (username && hash && email && type) {
+      connections.connection.query(
+        "INSERT INTO `accounts`(username, password, email, type) VALUES (?,?,?,?)",
+        [username, hash, email, type]
+      );
+      res.send(true);
+    } else {
+      res.send(false);
+    }
   } else {
     res.send(false);
   }
