@@ -83,14 +83,38 @@ app.post("/register", (req, res) => {
   let hash = bcrypt.hashSync(password, saltRounds);
 
   if (username && hash && email && type) {
-    connections.connection.query(
-      "INSERT INTO accounts(username, password, email, type) VALUES (?,?,?,?)",
-      [username, hash, email, type]
+    let exist = connections.connection.query(
+      "SELECT * FROM accounts WHERE username = ?",
+      [username],
+      (error, results, fields) => {
+        if (results.length === 0) {
+          connections.connection.query(
+            "INSERT INTO accounts(username, password, email, type) VALUES (?,?,?,?)",
+            [username, hash, email, type]
+          );
+          res.send("added");
+        } else if (error) {
+          console.log(error);
+        } else {
+          res.send("exist");
+        }
+      }
     );
-    res.send(true);
   } else {
-    res.send(false);
+    res.send("not valid data");
   }
+
+  // wersja działająca ale bez sprawdzania czy uzytownik istnieje!!
+
+  // if (username && hash && email && type) {
+  //   connections.connection.query(
+  //     "INSERT INTO accounts(username, password, email, type) VALUES (?,?,?,?)",
+  //     [username, hash, email, type]
+  //   );
+  //   res.send(true);
+  // } else {
+  //   res.send(false);
+  // }
 });
 
 app.get("/cookie", (req, res) => {
