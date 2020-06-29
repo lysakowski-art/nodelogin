@@ -79,31 +79,8 @@ app.post("/auth", (req, res) => {
 
 app.post("/register", (req, res) => {
   const { username, password, email, type } = req.body;
+  let saltRounds = 12;
   let hash = bcrypt.hashSync(password, saltRounds);
-
-  // if (username && hash && email && type) {
-  //   // tu kolejne warunlki
-  //   if (connections.connection.query("SELECT * FROM accounts WHERE username = ?",
-  //   [username],
-  //   (error, results, fields) => {
-  //     if(results.length === 0){
-  //       connections.connection.query(
-  //         "INSERT INTO `accounts`(username, password, email, type) VALUES (?,?,?,?)",
-  //         [username, hash, email, type]
-  //       );
-  //       res.send(true);
-  //     } else {
-  //       res.send("exist")
-  //     }
-  //   }
-  //   )){
-  //     res.send(false)
-  //   } else {
-  //     res.send("exist")
-  //   }
-  // } else {
-  //   res.send(false);
-  // }
 
   if (username && hash && email && type) {
     connections.connection.query(
